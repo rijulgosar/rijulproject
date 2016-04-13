@@ -69,6 +69,9 @@ from transpose import transpose
 
 t=numpy.linspace(0,1,10)
 
+xainit=10
+xminit=10
+
 for t1 in t:
     
     #for hydrolytic microbe
@@ -83,12 +86,22 @@ for t1 in t:
         dm=-(ummax*xm*xm)/(1+(10**(-ph)/km2)+km1/(10**(-ph)))-kmd*xm
         return dm
     
-    xa=odeint(ODEA,10,t)
+    def ODEM2(xm,t):
+        dm=-(ummax*xm*xm)/(1+(10**(-ph)/km2)+km1/(10**(-ph)))-kmd*xm-kmd*xa
+        return dm
 
-    xm=odeint(ODEM,10,t)
+    xa=odeint(ODEA,xainit,t)
+    #xm=odeint(ODEM,10,t)
     
     ph=-numpy.log10(xa/v)
     s=-xh/yh
+    
+    print ph
+    
+    if xa<5:
+        xm=odeint(ODEM,xminit,t)
+    else:
+        xm=odeint(ODEM2,xminit,t)
     
     print transpose (xh)
     print xa
@@ -106,7 +119,7 @@ def run(data):
     xdata.append(t)
     ydata.append(xa)
     xmin, xmax = ax.get_xlim()
-    '''
+'''   
     if t >= xmax:
         ax.set_xlim(xmin, 2*xmax)
         ax.figure.canvas.draw()
