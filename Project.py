@@ -28,7 +28,6 @@ import numpy
 import scipy
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 
 #For hydrolytic microbe
 uhmax=17.25         #max specific growth rate
@@ -61,79 +60,52 @@ s=10    #substrate input-feed
 ph=7    #initially
 n=10    #grid points
 v=10    #reactor volume, litres
-'''
+
 fig=plt.figure()
 ax=fig.add_subplot(111)
-'''
+
 from transpose import transpose
 
-t=numpy.linspace(0,1,10)
+t=numpy.linspace(0,1,10)    #uniform time interval
 
-xainit=10
-xminit=10
+xainit=20   #initial acetogenic microbe taken
+xminit=10   #initial methanogenic microbe taken
 
 for t1 in t:
     
     #for hydrolytic microbe
     xh=numpy.exp(((uhmax*s)/(Khs+s)-khd)*t)
     
-    #for acetogenic microbe
-    def ODEA(xa,t):
-        da=-(uamax*xa)/(1+(10**(-ph)/ka2)+ka1/(10**(-ph)))-kad*xa
-        return da
+    for xh1 in xh:
+        #for acetogenic microbe
+        def ODEA(xa,t):
+            da=-(uamax*xa)/(1+(10**(-ph)/ka2)+ka1/(10**(-ph)))-kad*xa
+            return da
     
-    def ODEM(xm,t):
-        dm=-(ummax*xm*xm)/(1+(10**(-ph)/km2)+km1/(10**(-ph)))-kmd*xm
-        return dm
+    xa=odeint(ODEA,xainit,t)    #acetogenic microbe growth
     
-    def ODEM2(xm,t):
-        dm=-(ummax*xm*xm)/(1+(10**(-ph)/km2)+km1/(10**(-ph)))-kmd*xm-kmd*xa
-        return dm
-
-    xa=odeint(ODEA,xainit,t)
-    #xm=odeint(ODEM,10,t)
+    #for methanogenic microbe
+    for xa1 in xa:
+        def ODEM(xm,t):
+            dm=-(ummax*xm*xm)/(1+(10**(-ph)/km2)+km1/(10**(-ph)))-kmd*xm
+            return dm
     
-    ph=-numpy.log10(xa/v)
-    s=-xh/yh
+        def ODEM2(xm,t):
+            dm=-(ummax*xm*xm)/(1+(10**(-ph)/km2)+km1/(10**(-ph)))-kmd*(xm-xa1)
+            return dm
+            
+        if xa1>(xainit/2):
+            xm=odeint(ODEM,xminit,t)
+        else:
+            xm=odeint(ODEM2,xminit,t)
     
-    print ph
-    
-    if xa<5:
-        xm=odeint(ODEM,xminit,t)
-    else:
-        xm=odeint(ODEM2,xminit,t)
+    ph=-numpy.log10(xa/v)   #variation of ph with acetogenic microbe amount
+    s=-xh/yh    #change in substrate amount due to consumption
     
     print transpose (xh)
     print xa
     print xm
 
-fig, ax = plt.subplots()
-ax.set_ylim(0, 20)
-ax.set_xlim(0, 10)
-ax.grid()
-xdata, ydata = [], []
 
-def run(data):
-    # update the data
-    t,xa = data
-    xdata.append(t)
-    ydata.append(xa)
-    xmin, xmax = ax.get_xlim()
-'''   
-    if t >= xmax:
-        ax.set_xlim(xmin, 2*xmax)
-        ax.figure.canvas.draw()
-    line.set_data(xdata, ydata)
-
-    return line,
-'''
-
-ani = animation.FuncAnimation(fig, run, ODEA(xa,t), blit=True, interval=1,
-    repeat=False)
+plt.plot(t, xa, 'r--', t, xh, 'bs', t, xm, 'g^')
 plt.show()
-
-'''
-ax.imshow(xa,cmap=plt.cm.RdBu_r)
-plt.pause(0.2)
-plt.show()
-'''
