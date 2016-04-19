@@ -13,7 +13,7 @@ THREE KINDS OF MICROBES-
 3- METHANOGENIC: Convert Acetic Acid to Methane
 
 ASSUMPTIONS-
-    - Feed and Glucose compositions are in ecxess, and do not vary much with progress of reaction
+    -Feed and Glucose compositions are in ecxess, and do not vary much with progress of reaction
     -Concentration of acetic acid changes due to acetogenic microbe, which changes pH
     -Microbial growth follows Monod Kinetics
     -Biomass change with pH is modelled using an equation given in a paper by Tom, Wang, and Marshall
@@ -22,12 +22,14 @@ ASSUMPTIONS-
         2. Acetogens: Syntrophobacter wolinii
         3. Methanogens: Syntrophomonas wolfei
     -Growth of microbes stops at very low pH, i.e., when conc of acetic acid becomes too large
+    -Growth of hydrolytic microbe is not influenced drastically by pH and follows simple Monod Kinetics
 DATA
 '''
 import numpy
 import scipy
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 #For hydrolytic microbe
 uhmax=17.25         #max specific growth rate
@@ -100,12 +102,51 @@ for t1 in t:
             xm=odeint(ODEM2,xminit,t)
     
     ph=-numpy.log10(xa/v)   #variation of ph with acetogenic microbe amount
-    s=-xh/yh    #change in substrate amount due to consumption
+    ds=-xh/yh    #change in substrate amount due to consumption
+    
+    s=s-ds      #new substrate amount after one cycle
     
     print transpose (xh)
     print xa
     print xm
 
 
-plt.plot(t, xa, 'r--', t, xh, 'bs', t, xm, 'g^')
+#plt.plot(t, xa, 'r--', t, xh, 'bs', t, xm, 'g^')
+#plt.show()
+
+fig, ax = plt.subplots()
+ax.set_ylim(0, 20)
+ax.set_xlim(0, 10)
+ax.grid()
+xdata, ydata = [], []
+
+def run(data):
+    # update the data
+    t,xa = data
+    xdata.append(t)
+    ydata.append(xa)
+    xmin, xmax = ax.get_xlim()
+   
+    if t >= xmax:
+        ax.set_xlim(xmin, 2*xmax)
+        ax.figure.canvas.draw()
+    
+
+ani = animation.FuncAnimation(fig, run, ODEA(xa,t), blit=True, interval=1,
+    repeat=False)
 plt.show()
+
+'''
+COMMENTS:
+    -The growth of the various microbes is monitored.
+    -It is found that as the biomass of the acetogenic microbe increases, the ph 
+     of the system reduces (system becomes more acidic).
+    -Beyond a certain point, usually upto half the initial concentration, the ph 
+     is low.
+    -As the growth proceeds, the substrate amount reduces and controls unimpeded 
+     growth of the acetogenic microbe.
+    -This limits the growth of methanogenic microbe, however controls ph and prevents
+     unnecessary death.
+    -The hydrolytic microbe is found to increase exponentially due to large 
+     availability of the substrate, and also due to relative immunity to ph fluctuation
+'''
